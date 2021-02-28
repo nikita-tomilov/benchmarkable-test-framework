@@ -5,6 +5,7 @@ import com.nikitatomilov.example.GenericService
 import com.nikitatomilov.example.ServiceA
 import com.nikitatomilov.example.ServiceB
 
+@Suppress("unused")
 class ExampleTest : BenchmarkableTestBase(
     ExampleTest::class.java, listOf(buildServiceA(), buildServiceB())) {
 

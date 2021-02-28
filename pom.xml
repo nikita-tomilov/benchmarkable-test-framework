@@ -18,6 +18,7 @@
 
     <modules>
         <module>framework</module>
+        <module>example</module>
     </modules>
 
     <dependencies>
