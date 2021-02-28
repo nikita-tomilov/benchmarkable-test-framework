@@ -1,6 +1,7 @@
 package com.nikitatomilov
 
 import com.nikitatomilov.annotations.BenchmarkableTest
+import com.nikitatomilov.api.TestTargets
 import com.nikitatomilov.api.TestableSubject
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicTest
@@ -8,7 +9,7 @@ import org.junit.jupiter.api.TestFactory
 
 open class BenchmarkableTestBase(
   private val testInstance: Class<*>,
-  private val targets: Iterable<TestableSubject>
+  private val testTargets: TestTargets<*>
 ) {
 
   @TestFactory
@@ -16,7 +17,11 @@ open class BenchmarkableTestBase(
     val requiredTests = testInstance.methods.filter {
       it.isAnnotationPresent(BenchmarkableTest::class.java)
     }
-    return targets.map { target ->
+    return testTargets.targets.map {
+      if (it !is TestableSubject) {
+        error("$it should implement TestableSubject")
+      }
+      val target = it as TestableSubject
       DynamicContainer.dynamicContainer(target::class.java.simpleName,
           listOf(buildFunc("setUp") { target.beforeAll() } ) +
           requiredTests.map { testMethod ->
