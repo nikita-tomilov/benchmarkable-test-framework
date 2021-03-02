@@ -7,12 +7,7 @@ import com.nikitatomilov.example.ServiceA
 import com.nikitatomilov.example.ServiceB
 
 @Suppress("unused")
-class ExampleTest : BenchmarkableTestBase(
-    ExampleTest::class.java,
-    TestTargets<GenericService>(
-        listOf(
-            buildServiceA(),
-            buildServiceB()))) {
+class ExampleTest : BenchmarkableTestBase(ExampleTest::class.java) {
 
   @BenchmarkableTest
   fun `do stuff works 1`(target: GenericService) {
@@ -29,5 +24,12 @@ class ExampleTest : BenchmarkableTestBase(
   companion object {
     fun buildServiceA(): ServiceA = ServiceA()
     fun buildServiceB(): ServiceB = ServiceB()
+  }
+
+  override fun buildTestTargets(): TestTargets<*> {
+    return TestTargets<GenericService>(
+        listOf(
+            buildServiceA(),
+            buildServiceB()))
   }
 }
