@@ -1,11 +1,7 @@
 package com.nikitatomilov
 
 import com.google.common.collect.HashBasedTable
-import com.nikitatomilov.api.FixedCountIterationStrategy
-import com.nikitatomilov.api.IterationStrategy
-import com.nikitatomilov.api.TestableSubject
-import com.nikitatomilov.api.UntilDoesntChangeIterationStrategy
-import com.nikitatomilov.measurements.CPUUtils
+import com.nikitatomilov.api.*
 import com.nikitatomilov.measurements.Measurements
 import java.lang.reflect.Method
 
@@ -13,7 +9,8 @@ class BenchmarkRunner(
   private val target: TestableSubject,
   private val methods: List<Method>,
   private val baseClass: BenchmarkableTestBase,
-  private val clockFunc: () -> Long = { CPUUtils.getWallClockTime() },
+  private val benchmarkStopwatch: BenchmarkStopwatch =
+      GuavaStopwatchStrategy(),
   private val iterationsStrategy: IterationStrategy =
       UntilDoesntChangeIterationStrategy(0.01, 10, 10000)
 ) {
@@ -64,10 +61,9 @@ class BenchmarkRunner(
   }
 
   private fun runWithTiming(lambda: () -> Unit): Long {
-    val startTime = clockFunc.invoke()
+    benchmarkStopwatch.init()
     lambda.invoke()
-    val endTime = clockFunc.invoke()
-    return endTime - startTime
+    return benchmarkStopwatch.elapsed()
   }
 
   companion object {
