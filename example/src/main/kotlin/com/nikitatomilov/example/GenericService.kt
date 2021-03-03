@@ -1,5 +1,7 @@
 package com.nikitatomilov.example
 
 interface GenericService {
-  fun doStuff()
+  fun doAnotherStuff()
+
+  fun doAnotherStuff(arg: Int)
 }
