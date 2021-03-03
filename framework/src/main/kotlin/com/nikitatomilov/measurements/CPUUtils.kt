@@ -1,4 +1,4 @@
-package com.nikitatomilov
+package com.nikitatomilov.measurements
 
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadMXBean
