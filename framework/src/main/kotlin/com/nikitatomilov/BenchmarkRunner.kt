@@ -7,18 +7,42 @@ class BenchmarkRunner(
   private val target: TestableSubject,
   private val methods: List<Method>,
   private val baseClass: BenchmarkableTestBase,
-  private val clockFunc: () -> Long = { CPUUtils.getWallClockTime() }
+  private val clockFunc: () -> Long = { CPUUtils.getWallClockTime() },
+  private val iterationsCount: Int = 1
 ) {
 
   fun runAll() {
     target.beforeAll()
     methods.forEach { method ->
-      target.beforeEach()
-      val time = runWithTiming { method.invoke(baseClass, target) }
-      println("took $time nanoseconds")
-      target.afterEach()
+      when (method.parameterCount) {
+        1 -> {
+          (0 until iterationsCount).forEach { _ -> runSingle(method) }
+        }
+        2 -> {
+          val args = baseClass.getParametersFor(method.name)
+          args.forEach { arg ->
+            (0 until iterationsCount).forEach { _ -> runSingle(method, arg) }
+          }
+        }
+        else -> error("Method '${method.name}' should have either 1 or 2 parameters")
+      }
+
     }
     target.afterAll()
+  }
+
+  private fun runSingle(method: Method) {
+    target.beforeEach()
+    val time = runWithTiming { method.invoke(baseClass, target) }
+    println("${name(method)} took $time nanoseconds")
+    target.afterEach()
+  }
+
+  private fun runSingle(method: Method, arg: Any) {
+    target.beforeEach()
+    val time = runWithTiming { method.invoke(baseClass, target, arg) }
+    println("${name(method, arg)} took $time nanoseconds")
+    target.afterEach()
   }
 
   private fun runWithTiming(lambda: () -> Unit): Long {

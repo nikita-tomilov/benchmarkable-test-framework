@@ -23,13 +23,13 @@ abstract class BenchmarkableTestBase(
           requiredTests.map { testMethod ->
             when (testMethod.parameterCount) {
               1 -> {
-                listOf(DynamicTest.dynamicTest(testMethod.name) {
+                listOf(DynamicTest.dynamicTest(name(testMethod)) {
                   invokeTestMethod(target, testMethod) }
                 )
               }
               2 -> {
                 getParametersFor(testMethod.name).map { param ->
-                  DynamicTest.dynamicTest("${testMethod.name} - $param") {
+                  DynamicTest.dynamicTest(name(testMethod, param)) {
                     invokeTestMethod(target, testMethod, param)
                   }
                 }
@@ -67,13 +67,13 @@ abstract class BenchmarkableTestBase(
     return providerMethod.invoke(this) as List<Any>
   }
 
-  internal fun invokeTestMethod(target: TestableSubject, testMethod: Method) {
+  private fun invokeTestMethod(target: TestableSubject, testMethod: Method) {
     target.beforeEach()
     testMethod.invoke(this, target)
     target.afterEach()
   }
 
-  internal fun invokeTestMethod(target: TestableSubject, testMethod: Method, arg: Any) {
+  private fun invokeTestMethod(target: TestableSubject, testMethod: Method, arg: Any) {
     target.beforeEach()
     testMethod.invoke(this, target, arg)
     target.afterEach()
