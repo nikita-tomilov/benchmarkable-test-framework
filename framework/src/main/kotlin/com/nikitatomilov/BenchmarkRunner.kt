@@ -1,7 +1,10 @@
 package com.nikitatomilov
 
 import com.google.common.collect.HashBasedTable
+import com.nikitatomilov.api.FixedCountIterationStrategy
+import com.nikitatomilov.api.IterationStrategy
 import com.nikitatomilov.api.TestableSubject
+import com.nikitatomilov.api.UntilDoesntChangeIterationStrategy
 import com.nikitatomilov.measurements.CPUUtils
 import com.nikitatomilov.measurements.Measurements
 import java.lang.reflect.Method
@@ -11,7 +14,8 @@ class BenchmarkRunner(
   private val methods: List<Method>,
   private val baseClass: BenchmarkableTestBase,
   private val clockFunc: () -> Long = { CPUUtils.getWallClockTime() },
-  private val iterationsCount: Int = 100
+  private val iterationsStrategy: IterationStrategy =
+      UntilDoesntChangeIterationStrategy(0.01, 10, 10000)
 ) {
 
   fun runAll(): Map<String, Measurements> {
@@ -20,18 +24,22 @@ class BenchmarkRunner(
     methods.forEach { method ->
       when (method.parameterCount) {
         1 -> {
-          (0 until iterationsCount).forEach { _ ->
-            val time = runSingle(method)
+          var time: Long
+          iterationsStrategy.clear()
+          do {
+            time = runSingle(method)
             measurements.getOrPut(name(method)) { arrayListOf() }.add(time)
-          }
+          } while(!iterationsStrategy.shouldStopIterating(time))
         }
         2 -> {
           val args = baseClass.getParametersFor(method.name)
           args.forEach { arg ->
-            (0 until iterationsCount).forEach { _ ->
-              val time = runSingle(method, arg)
+            var time: Long
+            iterationsStrategy.clear()
+            do {
+              time = runSingle(method, arg)
               measurements.getOrPut(name(method, arg)) { arrayListOf() }.add(time)
-            }
+            } while(!iterationsStrategy.shouldStopIterating(time))
           }
         }
         else -> error("Method '${method.name}' should have either 1 or 2 parameters")
