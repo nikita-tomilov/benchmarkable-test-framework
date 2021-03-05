@@ -1,93 +1,65 @@
 package com.nikitatomilov
 
 import com.google.common.collect.HashBasedTable
-import com.nikitatomilov.api.*
 import com.nikitatomilov.measurements.Measurements
-import java.lang.reflect.Method
+import org.reflections.Reflections
 
-class BenchmarkRunner(
-  private val target: TestableSubject,
-  private val methods: List<Method>,
-  private val baseClass: BenchmarkableTestBase,
-  private val benchmarkStopwatch: BenchmarkStopwatch =
-      GuavaStopwatchStrategy(),
-  private val iterationsStrategy: IterationStrategy =
-      UntilDoesntChangeIterationStrategy(0.01, 10, 10000)
-) {
+object BenchmarkRunner {
 
-  fun runAll(): Map<String, Measurements> {
-    val measurements = HashMap<String, ArrayList<Long>>()
-    target.beforeAll()
-    methods.forEach { method ->
-      when (method.parameterCount) {
-        1 -> {
-          var time: Long
-          iterationsStrategy.clear()
-          do {
-            time = runSingle(method)
-            measurements.getOrPut(name(method)) { arrayListOf() }.add(time)
-          } while(!iterationsStrategy.shouldStopIterating(time))
-        }
-        2 -> {
-          val args = baseClass.getParametersFor(method.name)
-          args.forEach { arg ->
-            var time: Long
-            iterationsStrategy.clear()
-            do {
-              time = runSingle(method, arg)
-              measurements.getOrPut(name(method, arg)) { arrayListOf() }.add(time)
-            } while(!iterationsStrategy.shouldStopIterating(time))
-          }
-        }
-        else -> error("Method '${method.name}' should have either 1 or 2 parameters")
-      }
+  fun run(testSource: Class<*>) {
+    if (!suitableForBenchmarking(testSource)) {
+      error("$testSource should extend BenchmarkableBase")
     }
-    target.afterAll()
-    return measurements.map { it.key to Measurements(it.value) }.toMap()
-  }
+    println("Starting benchmarking for '$testSource'")
 
-  private fun runSingle(method: Method): Long {
-    target.beforeEach()
-    val time = runWithTiming { method.invoke(baseClass, target) }
-    target.afterEach()
-    return time
-  }
+    val r = Reflections(this::class.java.`package`)
+    val testInstances = r.getSubTypesOf(testSource).toList().sortedBy { "$it" }
 
-  private fun runSingle(method: Method, arg: Any): Long {
-    target.beforeEach()
-    val time = runWithTiming { method.invoke(baseClass, target, arg) }
-    target.afterEach()
-    return time
-  }
+    println("Found ${testInstances.size} child test bases: " +
+        testInstances.joinToString { "'$it'" })
 
-  private fun runWithTiming(lambda: () -> Unit): Long {
-    benchmarkStopwatch.init()
-    lambda.invoke()
-    return benchmarkStopwatch.elapsed()
-  }
+    val testSourceInstances = testInstances.map { testInstance ->
+      val constructor = testInstance.declaredConstructors.singleOrNull()
+        ?: error("$testInstance should have one constructor")
 
-  companion object {
-    fun run(testBase: BenchmarkableTestBase) {
-      val methods = testBase.getTestMethods()
-      val measurements = HashBasedTable.create<TestableSubject, String, Measurements>()
-      testBase.getCastedTestTargets().forEach { target ->
-        val measurementsForTarget = BenchmarkRunner(target, methods, testBase).runAll()
-        measurementsForTarget.forEach { (name, values) ->
-          measurements.put(target, name, values)
-        }
-      }
-      val methodNames = measurements.columnKeySet().toList().sorted()
-      methodNames.forEach { printResultsFor(it, measurements.column(it)) }
+      if (constructor.parameterCount != 0)
+        error("$testInstance should have constructor without arguments")
+
+      constructor.newInstance() as BenchmarkableBase
     }
 
-    private fun printResultsFor(methodName: String, measurements: Map<TestableSubject, Measurements>) {
-      println("\nBenchmark results in ns for '$methodName': ${Measurements.m4stringDescription()}")
-      measurements.forEach { (target, values) ->
-        val name = "${target.javaClass.simpleName};".padEnd(20, ' ')
-        val results = values.toM4String()
-        println("$name $results")
+    val measurements = HashBasedTable.create<BenchmarkableBase, String, Measurements>()
+    testSourceInstances.forEach { instance ->
+      val runner = BenchmarkInstanceRunner(instance)
+      val measurementsForTarget = runner.runAll()
+      measurementsForTarget.forEach { (name, values) ->
+        measurements.put(instance, name, values)
       }
-      println("\n")
     }
+
+    val methodNames = measurements.columnKeySet().toList().sorted()
+    methodNames.forEach { printResultsFor(it, measurements.column(it)) }
+  }
+
+  private fun suitableForBenchmarking(x: Class<*>): Boolean {
+    var parent = x.superclass
+    while (parent != null) {
+      if (parent == BenchmarkableBase::class.java) return true
+      parent = parent.superclass
+    }
+    return false
+  }
+
+  private fun printResultsFor(
+    methodName: String,
+    measurements: Map<BenchmarkableBase, Measurements>
+  ) {
+    println("\nBenchmark results in ns for '$methodName': ${Measurements.m4stringDescription()}")
+    measurements.forEach { (target, values) ->
+      val name = "${target.javaClass.simpleName};".padEnd(20, ' ')
+      val results = values.toM4String()
+      println("$name $results")
+    }
+    println("\n")
   }
 }

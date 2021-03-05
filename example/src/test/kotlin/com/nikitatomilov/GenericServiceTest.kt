@@ -2,44 +2,45 @@ package com.nikitatomilov
 
 import com.nikitatomilov.annotations.BenchmarkableTest
 import com.nikitatomilov.annotations.ParameterProvider
-import com.nikitatomilov.api.TestTargets
 import com.nikitatomilov.example.GenericService
 import com.nikitatomilov.example.ServiceA
 import com.nikitatomilov.example.ServiceB
 
-@Suppress("unused")
-class ExampleTest : BenchmarkableTestBase(ExampleTest::class.java) {
+open class GenericServiceTest(
+  private val target: GenericService
+) : BenchmarkableBase() {
 
   @BenchmarkableTest
-  fun `do stuff works 1`(target: GenericService) {
+  fun `generic do stuff works 1`() {
     target.doAnotherStuff()
     println("works 1")
   }
 
   @BenchmarkableTest
-  fun `do stuff works 2`(target: GenericService) {
+  fun `generic do stuff works 2`() {
     target.doAnotherStuff()
     println("works 2")
   }
 
-  @ParameterProvider("do stuff works 3")
-  fun buildParams() = listOf(1, 10, 100)
-
   @BenchmarkableTest
-  fun `do stuff works 3`(target: GenericService, iterations: Int) {
-    target.doAnotherStuff(iterations)
+  fun `generic do stuff works 3`(i: Int) {
+    target.doAnotherStuff(i)
     println("works 3")
   }
+
+  @ParameterProvider("generic do stuff works 3")
+  fun providerForTest3(): List<Int> = listOf(1, 10, 100)
+
+  override fun beforeAll() {}
+
+  override fun afterAll() {}
+
+  override fun beforeEach() {}
+
+  override fun afterEach() {}
 
   companion object {
     fun buildServiceA(): ServiceA = ServiceA()
     fun buildServiceB(): ServiceB = ServiceB()
-  }
-
-  override fun buildTestTargets(): TestTargets<*> {
-    return TestTargets<GenericService>(
-        listOf(
-            buildServiceA(),
-            buildServiceB()))
   }
 }
