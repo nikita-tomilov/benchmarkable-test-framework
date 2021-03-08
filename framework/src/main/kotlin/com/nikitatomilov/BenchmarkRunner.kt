@@ -12,9 +12,7 @@ object BenchmarkRunner {
     }
     println("Starting benchmarking for '$testSource'")
 
-    val r = Reflections(this::class.java.`package`)
-    val testInstances = r.getSubTypesOf(testSource).toList().sortedBy { "$it" }
-
+    val testInstances = getChildrenOf(testSource)
     println("Found ${testInstances.size} child test bases: " +
         testInstances.joinToString { "'$it'" })
 
@@ -41,13 +39,18 @@ object BenchmarkRunner {
     methodNames.forEach { printResultsFor(it, measurements.column(it)) }
   }
 
-  private fun suitableForBenchmarking(x: Class<*>): Boolean {
+  fun suitableForBenchmarking(x: Class<*>): Boolean {
     var parent = x.superclass
     while (parent != null) {
       if (parent == BenchmarkableBase::class.java) return true
       parent = parent.superclass
     }
     return false
+  }
+
+  fun getChildrenOf(x: Class<*>): List<Class<*>> {
+    val r = Reflections(this::class.java.`package`)
+    return r.getSubTypesOf(x).toList().sortedBy { "$it" }
   }
 
   private fun printResultsFor(
