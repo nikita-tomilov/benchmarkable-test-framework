@@ -5,7 +5,7 @@
 
     <groupId>com.nikitatomilov</groupId>
     <artifactId>benchmarkable-test-framework-parent</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
