@@ -6,8 +6,9 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
+@Suppress("unused")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ServiceATest : GenericServiceTest(buildServiceA()) {
+class ServiceATest : GenericServiceBenchmark(buildServiceA()) {
   @Test
   fun `do stuff works 1`() {
     `generic do stuff works 1`()

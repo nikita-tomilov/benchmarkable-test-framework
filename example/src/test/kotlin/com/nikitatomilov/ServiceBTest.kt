@@ -7,7 +7,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ServiceBTest : GenericServiceTest(buildServiceB()) {
+class ServiceBTest : GenericServiceBenchmark(buildServiceB()) {
   @Test
   fun `do stuff works 1`() {
     `generic do stuff works 1`()

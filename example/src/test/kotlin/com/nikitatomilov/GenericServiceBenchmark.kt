@@ -6,7 +6,7 @@ import com.nikitatomilov.example.GenericService
 import com.nikitatomilov.example.ServiceA
 import com.nikitatomilov.example.ServiceB
 
-open class GenericServiceTest(
+open class GenericServiceBenchmark(
   private val target: GenericService
 ) : BenchmarkableBase() {
 
