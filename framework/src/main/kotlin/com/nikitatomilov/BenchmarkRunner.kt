@@ -16,7 +16,7 @@ object BenchmarkRunner {
     testSource: Class<*>,
     stopwatch: BenchmarkStopwatch = GuavaStopwatchStrategy(),
     iterationsStrategy: IterationStrategy =
-        UntilDoesntChangeIterationStrategy(0.01, 10, 10000)
+        UntilDoesntChangeIterationStrategy(0.35, 10, 10000)
   ) {
     if (!suitableForBenchmarking(testSource)) {
       error("$testSource should extend BenchmarkableBase")

@@ -1,5 +1,7 @@
 package com.nikitatomilov.api
 
+import com.nikitatomilov.measurements.median
+import com.nikitatomilov.measurements.stddev
 import kotlin.math.abs
 
 interface IterationStrategy {
@@ -27,20 +29,18 @@ class UntilDoesntChangeIterationStrategy(
   private val minIterations: Int,
   private val maxIterations: Int
 ): IterationStrategy {
-  private var lastState = 0L
-  private var iterations = 0
+  private val measurements = ArrayList<Long>()
 
   override fun clear() {
-    lastState = 0L
-    iterations = 0
+    measurements.clear()
   }
 
   override fun shouldStopIterating(measuredTime: Long): Boolean {
-    iterations++
-    val diff = abs(measuredTime - lastState)
-    val relativeDiff = diff * 1.0 / measuredTime
-    val closeEnough = relativeDiff < relativePercentage
-    lastState = measuredTime
-    return (iterations >= minIterations) && (closeEnough || (iterations > maxIterations))
+    measurements.add(measuredTime)
+    val med = measurements.median()
+    val stddev = measurements.stddev()
+    val relDiff = abs(med - stddev) / med
+    val closeEnough = relDiff < relativePercentage
+    return (measurements.size >= minIterations) && (closeEnough || (measurements.size > maxIterations))
   }
 }

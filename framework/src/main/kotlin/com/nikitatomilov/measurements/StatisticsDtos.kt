@@ -1,6 +1,8 @@
 package com.nikitatomilov.measurements
 
 import kotlin.math.ceil
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 data class Measurements(
   val array: List<Long> = arrayListOf()
@@ -30,12 +32,20 @@ data class Measurements(
   }
 }
 
-private fun List<Long>.median(): Double {
+fun List<Long>.median(): Double {
   return if (this.size % 2 == 0)
     (this[this.size / 2] * 1.0 + this[this.size / 2 - 1] * 1.0)/2;
   else
     this[this.size / 2] * 1.0
 }
+
+fun List<Long>.stddev(): Double {
+  val avg = this.average()
+  var ssum = 0.0
+  this.forEach { ssum += (it - avg).pow(2) }
+  return sqrt(1.0 / (this.size - 1) * ssum)
+}
+
 
 private const val PADDING = 15
 private fun Int.pretty() = "$this;".padEnd(PADDING, ' ')
