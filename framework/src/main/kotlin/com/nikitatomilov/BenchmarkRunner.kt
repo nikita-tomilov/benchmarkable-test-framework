@@ -3,6 +3,7 @@ package com.nikitatomilov
 import com.google.common.collect.HashBasedTable
 import com.nikitatomilov.measurements.Measurements
 import org.reflections.Reflections
+import java.lang.Exception
 
 object BenchmarkRunner {
 
@@ -48,8 +49,13 @@ object BenchmarkRunner {
     return false
   }
 
-  fun getChildrenOf(x: Class<*>): List<Class<*>> {
-    val r = Reflections(this::class.java.`package`)
+  private fun getChildrenOf(x: Class<*>): List<Class<*>> {
+    val r = try {
+      Reflections(this::class.java.`package`)
+    } catch (e: Exception) {
+      //fallback to slower "global" reflections
+      Reflections()
+    }
     return r.getSubTypesOf(x).toList().sortedBy { "$it" }
   }
 
