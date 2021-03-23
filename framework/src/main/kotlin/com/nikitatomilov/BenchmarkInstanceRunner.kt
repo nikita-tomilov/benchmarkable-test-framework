@@ -6,10 +6,8 @@ import java.lang.reflect.Method
 
 class BenchmarkInstanceRunner(
   private val target: BenchmarkableBase,
-  private val benchmarkStopwatch: BenchmarkStopwatch =
-      GuavaStopwatchStrategy(),
-  private val iterationsStrategy: IterationStrategy =
-      UntilDoesntChangeIterationStrategy(0.01, 10, 10000)
+  private val benchmarkStopwatch: BenchmarkStopwatch,
+  private val iterationsStrategy: IterationStrategy
 ) {
 
   fun runAll(): Map<String, Measurements> {

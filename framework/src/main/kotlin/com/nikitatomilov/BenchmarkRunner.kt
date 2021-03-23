@@ -1,13 +1,23 @@
 package com.nikitatomilov
 
 import com.google.common.collect.HashBasedTable
+import com.nikitatomilov.api.BenchmarkStopwatch
+import com.nikitatomilov.api.GuavaStopwatchStrategy
+import com.nikitatomilov.api.IterationStrategy
+import com.nikitatomilov.api.UntilDoesntChangeIterationStrategy
 import com.nikitatomilov.measurements.Measurements
 import org.reflections.Reflections
-import java.lang.Exception
 
 object BenchmarkRunner {
 
-  fun run(testSource: Class<*>) {
+  @JvmStatic
+  @JvmOverloads
+  fun run(
+    testSource: Class<*>,
+    stopwatch: BenchmarkStopwatch = GuavaStopwatchStrategy(),
+    iterationsStrategy: IterationStrategy =
+        UntilDoesntChangeIterationStrategy(0.01, 10, 10000)
+  ) {
     if (!suitableForBenchmarking(testSource)) {
       error("$testSource should extend BenchmarkableBase")
     }
@@ -29,7 +39,7 @@ object BenchmarkRunner {
 
     val measurements = HashBasedTable.create<BenchmarkableBase, String, Measurements>()
     testSourceInstances.forEach { instance ->
-      val runner = BenchmarkInstanceRunner(instance)
+      val runner = BenchmarkInstanceRunner(instance, stopwatch, iterationsStrategy)
       val measurementsForTarget = runner.runAll()
       measurementsForTarget.forEach { (name, values) ->
         measurements.put(instance, name, values)
