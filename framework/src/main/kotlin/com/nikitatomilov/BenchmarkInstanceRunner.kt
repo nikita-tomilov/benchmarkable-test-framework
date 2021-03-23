@@ -10,8 +10,8 @@ class BenchmarkInstanceRunner(
   private val iterationsStrategy: IterationStrategy
 ) {
 
-  fun runAll(): Map<String, Measurements> {
-    val measurements = HashMap<String, ArrayList<Long>>()
+  fun runAll(): Map<NamedResult, Measurements> {
+    val measurements = HashMap<NamedResult, ArrayList<Long>>()
     val methods = target.getBenchmarkableMethods()
     target.beforeAll()
     methods.forEach { method ->
@@ -21,7 +21,7 @@ class BenchmarkInstanceRunner(
           iterationsStrategy.clear()
           do {
             time = runSingle(method)
-            measurements.getOrPut(name(method)) { arrayListOf() }.add(time)
+            measurements.getOrPut(NamedResult(method)) { arrayListOf() }.add(time)
           } while(!iterationsStrategy.shouldStopIterating(time))
         }
         1 -> {
@@ -31,7 +31,7 @@ class BenchmarkInstanceRunner(
             iterationsStrategy.clear()
             do {
               time = runSingle(method, arg)
-              measurements.getOrPut(name(method, arg)) { arrayListOf() }.add(time)
+              measurements.getOrPut(NamedResult(method, arg)) { arrayListOf() }.add(time)
             } while(!iterationsStrategy.shouldStopIterating(time))
           }
         }

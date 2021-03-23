@@ -1,10 +1,7 @@
 package com.nikitatomilov
 
 import com.google.common.collect.HashBasedTable
-import com.nikitatomilov.api.BenchmarkStopwatch
-import com.nikitatomilov.api.GuavaStopwatchStrategy
-import com.nikitatomilov.api.IterationStrategy
-import com.nikitatomilov.api.UntilDoesntChangeIterationStrategy
+import com.nikitatomilov.api.*
 import com.nikitatomilov.measurements.Measurements
 import org.reflections.Reflections
 
@@ -37,7 +34,7 @@ object BenchmarkRunner {
       constructor.newInstance() as BenchmarkableBase
     }
 
-    val measurements = HashBasedTable.create<BenchmarkableBase, String, Measurements>()
+    val measurements = HashBasedTable.create<BenchmarkableBase, NamedResult, Measurements>()
     testSourceInstances.forEach { instance ->
       val runner = BenchmarkInstanceRunner(instance, stopwatch, iterationsStrategy)
       val measurementsForTarget = runner.runAll()
@@ -46,8 +43,18 @@ object BenchmarkRunner {
       }
     }
 
-    val methodNames = measurements.columnKeySet().toList().sorted()
-    methodNames.forEach { printResultsFor(it, measurements.column(it)) }
+    val namedResultsFull = measurements.columnKeySet().toList()
+    val methodNames = namedResultsFull.map { it.name() }.toSet().toList().sorted()
+    methodNames.forEach { name ->
+      val resultsForMethodName = namedResultsFull.filter { it.name() == name }.toSet()
+      if (resultsForMethodName.size == 1) {
+        val method = resultsForMethodName.single()
+        printResultsFor(method.name(), measurements.column(method))
+      } else {
+        val sorted = resultsForMethodName.sortedBy { it.param() }
+        printResultsFor(name, sorted, measurements)
+      }
+    }
   }
 
   fun suitableForBenchmarking(x: Class<*>): Boolean {
@@ -78,6 +85,24 @@ object BenchmarkRunner {
       val name = "${target.javaClass.simpleName};".padEnd(20, ' ')
       val results = values.toM4String()
       println("$name $results")
+    }
+    println("\n")
+  }
+
+  private fun printResultsFor(
+    methodName: String,
+    namedResults: List<NamedResult>,
+    table: HashBasedTable<BenchmarkableBase, NamedResult, Measurements>
+  ) {
+    val implementations = table.rowKeySet().sortedBy { it.javaClass.simpleName }
+    val tableLegend = implementations.joinToString(" ;") { "${it.javaClass.simpleName} AVG" }
+    println("\nBenchmark results in ns for '$methodName': \nparam; $tableLegend ")
+    namedResults.forEach { nr ->
+      val param = nr.param()
+      val rowString =
+          implementations.map { table.get(it, nr).avg }.joinToString("") { "$it;".padEnd(20, ' ') }
+      val rowName = "$param; ".padEnd(20, ' ')
+      println("$rowName $rowString")
     }
     println("\n")
   }

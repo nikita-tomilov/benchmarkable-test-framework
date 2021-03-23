@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.nikitatomilov</groupId>
         <artifactId>benchmarkable-test-framework-parent</artifactId>
-        <version>0.4-SNAPSHOT</version>
+        <version>0.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>framework-usage-example</artifactId>
