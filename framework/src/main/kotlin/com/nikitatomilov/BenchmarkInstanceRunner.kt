@@ -1,5 +1,6 @@
 package com.nikitatomilov
 
+import com.nikitatomilov.annotations.RunJustOnce
 import com.nikitatomilov.api.*
 import com.nikitatomilov.measurements.Measurements
 import java.lang.reflect.Method
@@ -15,24 +16,30 @@ class BenchmarkInstanceRunner(
     val methods = target.getBenchmarkableMethods()
     target.beforeAll()
     methods.forEach { method ->
+      val strategyToUse = if (method.isAnnotationPresent(RunJustOnce::class.java)) {
+        FixedCountIterationStrategy(1)
+      } else {
+        iterationsStrategy
+      }
+      println("Beginning to benchmark '${target.javaClass.simpleName}', method '${method.name}'")
       when (method.parameterCount) {
         0 -> {
           var time: Long
-          iterationsStrategy.clear()
+          strategyToUse.clear()
           do {
             time = runSingle(method)
             measurements.getOrPut(NamedResult(method)) { arrayListOf() }.add(time)
-          } while(!iterationsStrategy.shouldStopIterating(time))
+          } while(!strategyToUse.shouldStopIterating(time))
         }
         1 -> {
           val args = target.getParametersFor(method.name)
           args.forEach { arg ->
             var time: Long
-            iterationsStrategy.clear()
+            strategyToUse.clear()
             do {
               time = runSingle(method, arg)
               measurements.getOrPut(NamedResult(method, arg)) { arrayListOf() }.add(time)
-            } while(!iterationsStrategy.shouldStopIterating(time))
+            } while(!strategyToUse.shouldStopIterating(time))
           }
         }
         else -> error("Method '${method.name}' should have either 0 or 1 parameter")
