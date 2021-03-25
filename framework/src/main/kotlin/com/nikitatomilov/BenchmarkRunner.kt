@@ -51,7 +51,7 @@ object BenchmarkRunner {
         val method = resultsForMethodName.single()
         printResultsFor(method.name(), measurements.column(method))
       } else {
-        val sorted = resultsForMethodName.sortedBy { it.param() }
+        val sorted = resultsForMethodName.sortedBy { it.paramForSorting() }
         printResultsFor(name, sorted, measurements)
       }
     }
