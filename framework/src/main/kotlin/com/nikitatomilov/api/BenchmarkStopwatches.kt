@@ -8,9 +8,13 @@ interface BenchmarkStopwatch {
   fun init()
 
   fun elapsed(): Long
+
+  fun unitOfMeasurements(): String
 }
 
-class CPUTimeStopwatch: BenchmarkStopwatch {
+class CPUTimeStopwatch(
+  val timeUnit: TimeUnit
+): BenchmarkStopwatch {
   private var start = 0L
 
   override fun init() {
@@ -18,11 +22,17 @@ class CPUTimeStopwatch: BenchmarkStopwatch {
   }
 
   override fun elapsed(): Long {
-    return CPUUtils.getCPUTime() - start
+    return timeUnit.convert(CPUUtils.getCPUTime() - start, TimeUnit.NANOSECONDS)
+  }
+
+  override fun unitOfMeasurements(): String {
+    return timeUnit.toString()
   }
 }
 
-class GuavaStopwatchStrategy: BenchmarkStopwatch {
+class GuavaStopwatchStrategy(
+  val timeUnit: TimeUnit
+): BenchmarkStopwatch {
 
   private lateinit var sw: Stopwatch
 
@@ -32,6 +42,10 @@ class GuavaStopwatchStrategy: BenchmarkStopwatch {
 
   override fun elapsed(): Long {
     sw.stop()
-    return sw.elapsed(TimeUnit.NANOSECONDS)
+    return sw.elapsed(timeUnit)
+  }
+
+  override fun unitOfMeasurements(): String {
+    return timeUnit.toString()
   }
 }
