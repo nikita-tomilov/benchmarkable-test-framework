@@ -28,14 +28,19 @@ object BenchmarkRunner {
     println("Found ${testInstances.size} child test bases: " +
         testInstances.joinToString { "'$it'" })
 
-    val testSourceInstances = testInstances.map { testInstance ->
-      val constructor = testInstance.declaredConstructors.singleOrNull()
-        ?: error("$testInstance should have one constructor")
+    val testSourceInstances = testInstances.mapNotNull { testInstance ->
+      try {
+        val constructor = testInstance.declaredConstructors.singleOrNull()
+          ?: error("$testInstance should have one constructor")
 
-      if (constructor.parameterCount != 0)
-        error("$testInstance should have constructor without arguments")
+        if (constructor.parameterCount != 0)
+          error("$testInstance should have constructor without arguments")
 
-      constructor.newInstance() as BenchmarkableBase
+        constructor.newInstance() as BenchmarkableBase
+      } catch (e: Exception) {
+        println("WARN: $testInstance is not suitable; reason: ${e.message}")
+        null
+      }
     }
 
     val measurements = HashBasedTable.create<BenchmarkableBase, NamedResult, Measurements>()
