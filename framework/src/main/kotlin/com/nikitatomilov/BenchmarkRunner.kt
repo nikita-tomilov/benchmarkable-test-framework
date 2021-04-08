@@ -4,6 +4,9 @@ import com.google.common.collect.HashBasedTable
 import com.nikitatomilov.api.*
 import com.nikitatomilov.measurements.Measurements
 import org.reflections.Reflections
+import java.io.File
+import java.nio.file.Files
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 object BenchmarkRunner {
@@ -44,6 +47,9 @@ object BenchmarkRunner {
       }
     }
 
+    val dir = File("./benchmark-results/results-${Instant.now().toString().replace(":", "-")}")
+    dir.mkdirs()
+
     val namedResultsFull = measurements.columnKeySet().toList()
     val methodNames = namedResultsFull.map { it.name() }.toSet().toList().sorted()
     methodNames.forEach { name ->
@@ -53,7 +59,7 @@ object BenchmarkRunner {
         printResultsFor(method.name(), stopwatch, measurements.column(method))
       } else {
         val sorted = resultsForMethodName.sortedBy { it.paramForSorting() }
-        printResultsFor(name, sorted, stopwatch, measurements)
+        printResultsFor(name, sorted, stopwatch, measurements, dir.absolutePath)
       }
     }
   }
@@ -95,18 +101,25 @@ object BenchmarkRunner {
     methodName: String,
     namedResults: List<NamedResult>,
     stopwatch: BenchmarkStopwatch,
-    table: HashBasedTable<BenchmarkableBase, NamedResult, Measurements>
+    table: HashBasedTable<BenchmarkableBase, NamedResult, Measurements>,
+    targetDir: String
   ) {
+    val sb = StringBuilder()
     val implementations = table.rowKeySet().sortedBy { it.javaClass.simpleName }
-    val tableLegend = implementations.joinToString("; ") { "${it.javaClass.simpleName} AVG" }
-    println("\nBenchmark results in in ${stopwatch.unitOfMeasurements()} for '$methodName': \nparam; $tableLegend ")
+    val tableLegend = implementations.joinToString(" ") { "${it.javaClass.simpleName}_AVG" }
+    println("\nBenchmark results in in ${stopwatch.unitOfMeasurements()} for '$methodName': \nparam $tableLegend ")
+    sb.append("param $tableLegend\n")
     namedResults.forEach { nr ->
       val param = nr.param()
       val rowString =
-          implementations.map { table.get(it, nr).avg }.joinToString("") { "$it;".padEnd(20, ' ') }
-      val rowName = "$param; ".padEnd(20, ' ')
+          implementations.map { table.get(it, nr).avg }.joinToString("") { "$it ".padEnd(20, ' ') }
+      val rowName = "$param ".padEnd(20, ' ')
       println("$rowName $rowString")
+      sb.append("$rowName $rowString\n")
     }
     println("\n")
+    val file = File(targetDir + "/results-$methodName.csv")
+    val csvContents = sb.toString()
+    Files.write(file.toPath(), csvContents.toByteArray())
   }
 }
